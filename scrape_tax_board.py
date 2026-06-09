@@ -44,7 +44,7 @@ LBI_MUNICIPALITIES = {
     "BARNEGAT LIGHT": 2,
     "BEACH HAVEN": 4,
     "HARVEY CEDARS": 10,
-    "LONG BEACH": 17,
+    "LONG BEACH": 18,
     "SHIP BOTTOM": 29,
     "SURF CITY": 32,
 }
@@ -422,6 +422,7 @@ def main():
     parser = argparse.ArgumentParser(description="Scrape Ocean County Tax Board for LBI properties")
     parser.add_argument("--municipality", "-m", help="Single municipality name (e.g., 'BARNEGAT LIGHT')")
     parser.add_argument("--blocks", "-b", help="Comma-separated block numbers to scrape")
+    parser.add_argument("--blocks-file", help="File with one block number per line to scrape")
     parser.add_argument("--resume", action="store_true", help="Skip already-scraped detail IDs")
     parser.add_argument("--delay", type=float, default=REQUEST_DELAY, help="Seconds between requests")
     parser.add_argument("--discover-only", action="store_true", help="Only run discovery, skip detail fetch")
@@ -450,13 +451,24 @@ def main():
     for muni_name, muni_code in munis.items():
         log.info("=== %s (code %d) ===", muni_name, muni_code)
 
-        if args.blocks:
-            block_list = args.blocks.split(",")
+        if args.blocks or args.blocks_file:
+            if args.blocks_file:
+                with open(args.blocks_file) as bf:
+                    block_list = [line.strip() for line in bf if line.strip()]
+            else:
+                block_list = args.blocks.split(",")
             muni_results = []
-            for block in block_list:
-                results, hit_limit = scraper.search(muni_code, block=block.strip())
+            for i, block in enumerate(block_list):
+                block = block.strip()
+                results, hit_limit = scraper.search(muni_code, block=block)
                 muni_results.extend(results)
-                log.info("  Block %s: %d results", block.strip(), len(results))
+                if results:
+                    log.info("  Block %s: %d results%s",
+                             block, len(results),
+                             " (HIT LIMIT)" if hit_limit else "")
+                if (i + 1) % 50 == 0:
+                    log.info("  Searched %d/%d blocks, %d results so far",
+                             i + 1, len(block_list), len(muni_results))
         else:
             muni_results = scraper.discover_blocks(muni_code)
 

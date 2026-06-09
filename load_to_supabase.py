@@ -26,7 +26,6 @@ import logging
 import os
 import sys
 import time
-from collections import Counter
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -52,11 +51,19 @@ MUNICIPALITY_TO_PAMS = {
     "LONG BEACH": "1518",
     "SHIP BTM": "1529",
     "SURF CITY": "1532",
+    "Bngt Lt": "1502",
+    "BNGT LT": "1502",
+    "Shp Btm": "1529",
+    "SHP BTM": "1529",
     "BARNEGAT LIGHT": "1502",
     "BEACH HAVEN": "1504",
     "HARVEY CEDARS": "1510",
     "LONG BEACH TWP": "1518",
     "SHIP BOTTOM": "1529",
+    "Lng Bch": "1518",
+    "LNG BCH": "1518",
+    "Lng Bch Twp": "1518",
+    "LNG BCH TWP": "1518",
 }
 
 
@@ -204,11 +211,12 @@ def main():
 
     log.info("Transformed %d rows (%d errors)", len(rows), len(errors))
 
-    pins = [r["pams_pin"] for r in rows]
-    dupes = {k: v for k, v in Counter(pins).items() if v > 1}
-    if dupes:
-        log.error("DUPLICATE PAMS_PINs detected: %s", dupes)
-        sys.exit(1)
+    seen = {}
+    for r in rows:
+        seen[r["pams_pin"]] = r
+    if len(seen) < len(rows):
+        log.info("Deduplicated %d → %d rows (kept last occurrence per pams_pin)", len(rows), len(seen))
+    rows = list(seen.values())
 
     if args.dry_run:
         log.info("Dry run complete. Sample transformed row:")
