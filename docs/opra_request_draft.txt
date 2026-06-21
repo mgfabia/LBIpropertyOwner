@@ -1,0 +1,131 @@
+To: Ocean County Tax Board
+    Records Custodian
+    129 Hooper Avenue, 2nd Floor
+    Toms River, NJ 08753
+    taxboard@co.ocean.nj.us
+
+Subject: OPRA Request — Tax Assessment List with Owner Names
+
+
+OPEN PUBLIC RECORDS ACT REQUEST
+(N.J.S.A. 47:1A-1 et seq.)
+
+
+REQUESTOR INFORMATION
+
+    Name:    Mark Fabian
+    Address: [YOUR MAILING ADDRESS]
+    Phone:   [YOUR PHONE NUMBER]
+    Email:   markfabian025@gmail.com
+
+    Preferred delivery method: Email (electronic file attachment)
+
+
+RECORDS REQUESTED
+
+I am requesting a copy of the current tax assessment list (MOD-IV /
+Chapter 51 property tax list) for the following municipalities in
+Ocean County:
+
+    - Barnegat Light Borough (District 0201)
+    - Beach Haven Borough (District 0204)
+    - Harvey Cedars Borough (District 0210)
+    - Long Beach Township (District 0218)
+    - Ship Bottom Borough (District 0229)
+    - Surf City Borough (District 0232)
+
+Specifically, I am requesting the following fields for each parcel:
+
+    - Block, Lot, and Qualifier
+    - Property location (street address)
+    - Owner name(s)
+    - Owner mailing address
+    - Property class code
+    - Assessment values (land, improvement, total)
+
+I am requesting these records in electronic format (CSV, Excel, or
+delimited text file), as maintained by the Tax Board, pursuant to
+N.J.S.A. 47:1A-5(d).
+
+I understand that certain owner names may be redacted pursuant to
+Daniel's Law (P.L. 2020, c. 125). Redacted records are acceptable —
+please include all non-exempt records.
+
+
+CERTIFICATIONS
+
+Commercial purpose: I certify that the requested records will NOT be
+used for a commercial purpose as defined under N.J.S.A. 47:1A-5(b).
+
+Criminal history: I certify that I am NOT a person who has been
+convicted of any indictable offense under the laws of this State, any
+other state, or the United States seeking government records
+containing personal information pertaining to the requestor's victim
+or the victim's family.
+
+
+FEES
+
+If there is a fee associated with this request, please advise me of
+the cost before fulfilling it. I authorize up to $10.00 in
+reproduction costs without prior notification.
+
+
+Thank you for your consideration.
+
+Sincerely,
+Mark Fabian
+markfabian025@gmail.com
+
+
+--- NOTES (do not include in submission) ---
+
+ISSUES TO BE AWARE OF:
+
+1. COMMERCIAL PURPOSE — The certification above states non-commercial.
+   If you plan to use this data in any product, service, or activity
+   where you expect profit (even indirectly), you must certify it as
+   commercial instead. Commercial requests get 14 business days
+   instead of 7, and the custodian can charge up to 2x reproduction
+   cost. Intentionally failing to certify commercial use carries civil
+   penalties: $1,000 first offense, $2,500 second, $5,000 subsequent.
+
+2. DANIEL'S LAW REVIEW — Because this request includes owner names,
+   the custodian must review for Daniel's Law protected persons
+   (judges, prosecutors, law enforcement). This extends the response
+   deadline from 7 to 14 business days per N.J.S.A. 47:1A-5(m).
+   Expect a 14-day turnaround, not 7.
+
+3. FORM REQUIREMENT — The GRC requires OPRA requests to be on the
+   agency's official form or a written equivalent containing ALL the
+   form's required fields (name, address, phone, email, certifications).
+   This draft includes all required fields. However, Ocean County may
+   have their own OPRA portal or form — check their website first. If
+   they have a web portal (GovQA, JustFOIA, etc.), use that instead
+   of emailing this letter, as it guarantees proper routing and
+   creates a trackable record.
+
+4. SPECIAL SERVICE CHARGE RISK — Low. The tax assessment list is a
+   standard maintained database, not a custom compilation. If they
+   claim extracting it requires "extensive effort" and try to impose
+   a special service charge, you can push back — the data exists in
+   electronic format and OPRA requires they provide it as maintained.
+   If they insist, ask for an itemized cost breakdown. If you disagree
+   with the charge, the request is considered denied and you can file
+   a complaint with the GRC within 45 days.
+
+5. DENIAL RISK — Very low for this type of request. Tax assessment
+   lists are standard public records requested routinely. The only
+   likely partial denial is Daniel's Law redactions, which are
+   expected and acceptable. If fully denied, the custodian must cite
+   a specific legal basis. You have 45 days to file a complaint with
+   the GRC (no filing fee).
+
+6. IF NO RESPONSE IN 14 BUSINESS DAYS — Silence is a deemed denial
+   under OPRA. You can file a Denial of Access Complaint with the GRC
+   at https://www.nj.gov/grc/register/ (free, no attorney needed).
+
+7. ALTERNATIVE TARGETS — If the county Tax Board is unresponsive, you
+   can file the same request with each municipality's tax assessor
+   individually (6 separate requests). Municipal clerks are the
+   designated OPRA custodians for most municipalities.

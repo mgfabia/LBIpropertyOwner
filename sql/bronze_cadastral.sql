@@ -41,3 +41,7 @@ CREATE INDEX idx_bronze_cadastral_pcl_mun ON bronze_cadastral (pcl_mun);
 CREATE INDEX idx_bronze_cadastral_prop_class ON bronze_cadastral (prop_class);
 CREATE INDEX idx_bronze_cadastral_geom ON bronze_cadastral USING GIST (geom);
 CREATE INDEX idx_bronze_cadastral_raw_gin ON bronze_cadastral USING GIN (raw_record);
+
+-- Row Level Security: lock table to the service role only (loaders use the
+-- service role key, which bypasses RLS). No policies = no anon/public access.
+ALTER TABLE bronze_cadastral ENABLE ROW LEVEL SECURITY;

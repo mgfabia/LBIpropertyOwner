@@ -60,3 +60,7 @@ CREATE INDEX idx_sr1a_deed_date ON bronze_sr1a_sales (deed_date);
 CREATE INDEX idx_sr1a_usable ON bronze_sr1a_sales (usable_code);
 CREATE INDEX idx_sr1a_sale_price ON bronze_sr1a_sales (verified_sale_price);
 CREATE INDEX idx_sr1a_raw_gin ON bronze_sr1a_sales USING GIN (raw_record);
+
+-- Row Level Security: lock table to the service role only (loaders use the
+-- service role key, which bypasses RLS). No policies = no anon/public access.
+ALTER TABLE bronze_sr1a_sales ENABLE ROW LEVEL SECURITY;
