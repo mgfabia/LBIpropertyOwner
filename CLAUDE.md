@@ -26,15 +26,21 @@ See `docs/data-sources-inventory.md` for the full inventory with URLs, field lis
 ## Project structure
 
 ```
-scrape_tax_board.py    # Ocean County Tax Board scraper (search + detail pages)
-load_to_supabase.py    # Load tax board JSONL into Supabase bronze layer
-parse_sr1a.py          # Download, filter, parse NJ Treasury SR1A sales files for LBI
+scrape_tax_board.py      # Ocean County Tax Board scraper (search + detail pages)
+load_to_supabase.py      # Load tax board JSONL into Supabase bronze layer
+parse_sr1a.py            # Download, filter, parse NJ Treasury SR1A sales files for LBI
 load_sr1a_to_supabase.py # Load SR1A JSONL into Supabase bronze layer
-sql/                   # DDL for Supabase tables (version controlled)
-docs/                  # Data source documentation
-samples/               # Raw sample data files (SR1A fixed-width)
-data/                  # Scraper output (JSONL, CSV) — gitignored
-.venv/                 # Python virtual environment
+build_sr1a_crosswalk.py  # Build silver_sr1a_pin_crosswalk (resolves 1518 pams_pin)
+build_silver_parcels.py  # Build silver_parcels (unified parcel table with ownership)
+scrape_clerk.py          # Ocean County Clerk deed scraper (owner names via Playwright)
+load_clerk_to_supabase.py # Load clerk deed JSONL into Supabase bronze layer
+db.py                    # Shared Postgres connection via IPv4 pooler (for raw SQL)
+apply_sql.py             # Run a .sql file (DDL etc.) against Supabase via the pooler
+sql/                     # DDL for Supabase tables (version controlled)
+docs/                    # Data source documentation
+samples/                 # Raw sample data files (SR1A fixed-width)
+data/                    # Scraper output (JSONL, CSV) — gitignored
+.venv/                   # Python virtual environment
 ```
 
 ## Working with the scraper
@@ -58,6 +64,16 @@ Data is scraped locally to JSONL, then loaded into a Supabase Postgres database 
 
 - `bronze_sr1a_sales` — one row per sale transaction, keyed on `serial_number`. Schema DDL in `sql/bronze_sr1a_sales.sql`. A parcel can have multiple sales. Joins to `bronze_tax_board` via `pams_pin`. Source files: NJ Treasury SR1A bulk downloads (2020–2026 YTD).
 
+- `bronze_cadastral` — one row per parcel with polygon geometry, keyed on `pams_pin`. Schema DDL in `sql/bronze_cadastral.sql`. From NJ Cadastral ArcGIS REST API. Overlaps 96% with `bronze_tax_board` on `pams_pin`.
+
+- `bronze_clerk_deeds` — one row per deed document, keyed on composite `(deed_book, deed_page)`. Schema DDL in `sql/bronze_clerk_deeds.sql`. **This is the Daniel's Law workaround**: county deed records are not redacted, so they carry owner names the state sources blank. Scraped from the Ocean County Clerk portal by `scrape_clerk.py` (looks up each parcel's deed of record by book/page from `silver_parcels`). 17,269 deeds; 15,609 distinct parcels have ≥1 owner name. The source `party_code` field encodes role: `*` = grantor (seller), `''` = grantee (buyer = **current owner**) — verified against the clerk document detail view, both roles present on 15,260 of 15,261 deeds. The loader extracts `grantors[]`, `grantees[]` (current owners), and `parties[]` (union) as array columns alongside `raw_record`. Join to parcels via the `pams_pins[]` array, or match a parcel's `deed_book`/`deed_page` back to this table.
+
+**Silver layer**:
+
+- `silver_sr1a_pin_crosswalk` — one row per SR1A sale, keyed on `serial_number`. DDL in `sql/silver_sr1a_pin_crosswalk.sql`. Maps each SR1A `serial_number` to a `resolved_pams_pin` that joins correctly to `bronze_tax_board` / `bronze_cadastral`. Uses address-based matching via `bronze_cadastral.prop_loc` for 1518 orphans. Resolution rate: 97.4% overall (passthrough for non-1518, ~95% address-resolved for 1518). Populated by `build_sr1a_crosswalk.py`; rebuild after reloading bronze data.
+
+- `silver_parcels` — one row per parcel (19,958 rows), keyed on `pams_pin`. Schema DDL in `sql/silver_parcels.sql`. Merges `bronze_tax_board` + `bronze_cadastral` via full outer join (18,278 both sources, 707 tax-board-only, 973 cadastral-only). Includes PostGIS geometry, normalized mailing address, and derived ownership columns (`is_absentee`, `mailing_state`, `is_nj_resident`). Tax board wins for assessment/building data; cadastral wins for spatial/classification data. Populated by `build_silver_parcels.py`; rebuild after reloading bronze data. Joins to SR1A sales via `silver_sr1a_pin_crosswalk.resolved_pams_pin`.
+
 **Loading tax board data**:
 ```
 source .venv/bin/activate
@@ -74,15 +90,34 @@ python parse_sr1a.py --years 2024 2025        # specific years only
 python parse_sr1a.py --skip-download          # re-parse already-downloaded ZIPs
 python load_sr1a_to_supabase.py               # load combined JSONL to Supabase
 python load_sr1a_to_supabase.py --file data/sr1a/sr1a_2024.jsonl  # specific year
+python build_sr1a_crosswalk.py               # rebuild silver crosswalk from bronze
+python build_sr1a_crosswalk.py --dry-run     # compute stats without writing
 ```
 
-**Known join issue**: Long Beach Twp (1518) uses a section-based sub-block system in the tax board (`1.01`, `1.15`, etc.) while SR1A uses the state's integer blocks (`5`, `10`, `20`). This causes ~485 orphan SR1A records that don't match `bronze_tax_board`. Other municipalities match at 91–99%. Resolution requires a block crosswalk built from the Cadastral layer at the silver tier.
+**Clerk deed pipeline** (two-phase: scrape then load):
+```
+source .venv/bin/activate
+python scrape_clerk.py                        # scrape deed records (~7h full run; --resume to continue)
+python load_clerk_to_supabase.py             # load deed JSONL to bronze_clerk_deeds
+python load_clerk_to_supabase.py --dry-run   # transform + coverage stats, no DB writes
+```
+
+**Silver parcels pipeline** (rebuild after any bronze data changes):
+```
+source .venv/bin/activate
+python build_silver_parcels.py               # full rebuild from bronze tables
+python build_silver_parcels.py --dry-run     # compute merge stats without writing
+```
+
+**1518 join issue (resolved)**: Long Beach Twp (1518) uses a section-based sub-block system (`1.01`, `1.47`, `20.178`) while the SR1A fixed-width files encode all 1518 parcels with `block=00001` and put the section number in a `block_suffix` field that is NOT unique across base blocks (suffix `01` maps to 15 different base blocks). This made a deterministic formula impossible. Resolution: `silver_sr1a_pin_crosswalk` matches SR1A orphan records to `bronze_cadastral` via `property_location` (street address), resolving ~95% of 1518 sales (4,095 of 4,330 orphan records). The remaining ~5% are `property_location='X'` or address-format mismatches. Non-1518 municipalities have ~99 orphan pins across all 5 munis (mostly historical parcels that were consolidated/renumbered).
 
 Requires `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env` (see `.env.example`).
 
+**Database connections**: Data loads use supabase-py's REST client (HTTPS, IPv4) and need only the service-role key. Raw SQL — DDL (`apply_sql.py`) and PostGIS UPDATEs (`build_silver_parcels.py`) — can't go through REST and needs a real Postgres connection. The *direct* host (`db.<ref>.supabase.co`) is IPv6-only and unreachable from IPv4-only networks, so `db.py` connects via the IPv4 **pooler** (`aws-1-us-east-1.pooler.supabase.com` for this project). Raw SQL therefore also requires `SUPABASE_DB_PASSWORD` (the database password, NOT the service-role key) and `SUPABASE_DB_HOST` in `.env`. The service-role key is an API token, not a Postgres password, and can't authenticate a DB connection; PostgREST also doesn't expose DDL — hence both the pooler and the DB password are needed for table creation.
+
 ## Style and conventions
 
-- Python 3.13, dependencies managed via `.venv` (requests, beautifulsoup4, lxml, supabase, python-dotenv)
+- Python 3.13, dependencies managed via `.venv` (requests, beautifulsoup4, lxml, supabase, python-dotenv, psycopg2-binary)
 - Output format: JSONL (one JSON record per line) as primary, CSV as export
 - Scraper uses 1-second default delay between requests; configurable via `--delay`
 - Progress tracked in `data/tax_board_progress.json` for resume capability
